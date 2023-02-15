@@ -25,7 +25,7 @@ def get_performance_info(webdriver, race_date, race_no, race_course, base_url):
 
     # main body
     try:
-        # race info
+        """ race info """
         distance = webdriver.find_element(by=By.XPATH, value='//*[@id="innerContent"]/div[2]/div[4]/table/tbody/tr[2]/td[1]').text
         field_going = webdriver.find_element(by=By.XPATH, value='//*[@id="innerContent"]/div[2]/div[4]/table/tbody/tr[2]/td[3]').text
         race_name = webdriver.find_element(by=By.XPATH, value='//*[@id="innerContent"]/div[2]/div[4]/table/tbody/tr[3]/td[1]').text
@@ -41,6 +41,7 @@ def get_performance_info(webdriver, race_date, race_no, race_course, base_url):
         # trainer = {}
 
         # performance_data = []
+        """ table """
         for prank in performance_ranks:
             prank_data = prank.find_elements(by=By.TAG_NAME, value='td')
             performance_elem = [race_date, race_no, race_course, distance, field_going, race_name, course_type_n_no, race_money]
