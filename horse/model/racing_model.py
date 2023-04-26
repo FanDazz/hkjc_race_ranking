@@ -16,10 +16,11 @@ def LogSigmoidLoss(pred1, pred2):
 class _BaseModel(nn.Module):
     def __init__(self, n_dr, n_field
                      , n_jockey, n_horse, n_trainer
-                     , n_num_feats, k_dim_field, k_dim_id) -> None:
+                     , n_num_feats, k_dim_field, k_dim_id
+                     , need_activation=True) -> None:
         super(_BaseModel, self).__init__()
         self.out_dim = self.compute_out_dim(n_num_feats, k_dim_field, k_dim_id)
-        self.sigmoid = torch.sigmoid
+        self.activation = torch.sigmoid if need_activation else torch.nn.Identity()
         # init embedding for ids
         self.emb_dr = nn.Embedding(n_dr, k_dim_field)
         self.emb_field = nn.Embedding(n_field, k_dim_field)
@@ -47,10 +48,12 @@ class LinEmbConcat(_BaseModel):
     """ Simple Concat + Linear txfm for all embeddings """
     def __init__(self, n_dr, n_field
                      , n_jockey, n_horse, n_trainer
-                     , n_num_feats, k_dim_field, k_dim_id) -> None:
+                     , n_num_feats, k_dim_field, k_dim_id
+                     , need_activation) -> None:
         super(LinEmbConcat, self).__init__(n_dr, n_field
                                             , n_jockey, n_horse, n_trainer
-                                            , n_num_feats, k_dim_field, k_dim_id)
+                                            , n_num_feats, k_dim_field, k_dim_id
+                                            , need_activation)
 
     def forward(self, x, dr, field, jockey, horse, trainer):
         # lookup layer
@@ -61,7 +64,7 @@ class LinEmbConcat(_BaseModel):
         emb_t = self.emb_trainer(trainer)
         # out layer
         out = self.Linear(torch.concat([x, emb_d, emb_f, emb_j, emb_h, emb_t], 1))
-        out = self.sigmoid(out)
+        out = self.activation(out)
         return out
     
     def compute_out_dim(self, n_num_feats, k_dim_field, k_dim_id):
@@ -72,10 +75,12 @@ class LinEmbDotProd(_BaseModel):
     """ Dot Product for interactions """
     def __init__(self, n_dr, n_field
                      , n_jockey, n_horse, n_trainer
-                     , n_num_feats, k_dim_field, k_dim_id) -> None:
+                     , n_num_feats, k_dim_field, k_dim_id
+                     , need_activation) -> None:
         super(LinEmbDotProd, self).__init__(n_dr, n_field
                                             , n_jockey, n_horse, n_trainer
-                                            , n_num_feats, k_dim_field, k_dim_id)
+                                            , n_num_feats, k_dim_field, k_dim_id
+                                            , need_activation)
         self.Linear_field = nn.Linear(k_dim_field, 1)
         self.Linear_dr = nn.Linear(n_dr, 1)
         # init all dims
@@ -96,7 +101,7 @@ class LinEmbDotProd(_BaseModel):
         ht_val = torch.matmul(emb_h, emb_t.T).sum(1).unsqueeze(1)
         # out layer
         out = self.Linear(torch.concat([x, d_val, f_val, hj_val, ht_val],1))
-        out = self.sigmoid(out)
+        out = self.activation(out)
         return out
     
     def compute_out_dim(self, n_num_feats, k_dim_field, k_dim_id):
@@ -107,10 +112,12 @@ class LinEmbElemProd(_BaseModel):
     """ Element wise multiplication of embs, and linear comb """
     def __init__(self, n_dr, n_field
                      , n_jockey, n_horse, n_trainer
-                     , n_num_feats, k_dim_field, k_dim_id) -> None:
+                     , n_num_feats, k_dim_field, k_dim_id
+                     , need_activation) -> None:
         super(LinEmbElemProd, self).__init__(n_dr, n_field
                                              , n_jockey, n_horse, n_trainer
-                                             , n_num_feats, k_dim_field, k_dim_id)   
+                                             , n_num_feats, k_dim_field, k_dim_id
+                                             , need_activation)   
 
     def forward(self, x, dr, field, jockey, horse, trainer):
         # lookup
@@ -124,7 +131,7 @@ class LinEmbElemProd(_BaseModel):
         ht_val = torch.mul(emb_h, emb_t)
         # out Layer
         out = self.Linear(torch.concat([x, emb_d, emb_f, hj_val, ht_val], 1))
-        return self.sigmoid(out)
+        return self.activation(out)
     
     def compute_out_dim(self, n_num_feats, k_dim_field, k_dim_id):
         return n_num_feats + 2*k_dim_field + 2*k_dim_id
@@ -135,10 +142,12 @@ class EmbMLP(_BaseModel):
     def __init__(self, n_dr, n_field
                      , n_jockey, n_horse, n_trainer
                      , n_num_feats, k_dim_field, k_dim_id
+                     , need_activation
                      , num_layers, p_dropout=0.1, layer_size_reduction=0.5) -> None:
         super(EmbMLP, self).__init__(n_dr, n_field
                                      , n_jockey, n_horse, n_trainer
-                                     , n_num_feats, k_dim_field, k_dim_id)  
+                                     , n_num_feats, k_dim_field, k_dim_id
+                                     , need_activation)  
         # MLP
         feat_dim = n_num_feats + 2*k_dim_field + 2*k_dim_id
         MLP_sizes = [int(feat_dim*(layer_size_reduction**i)) for i in range(num_layers+1)]
@@ -166,7 +175,7 @@ class EmbMLP(_BaseModel):
         out = self.MLP_Layer(out)
         # out layer
         out = self.Linear(out)
-        out = self.sigmoid(out)
+        out = self.activation(out)
         return out
 
     def compute_out_dim(self, n_num_feats, k_dim_field, k_dim_id):

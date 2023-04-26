@@ -91,3 +91,35 @@ class DataSet:
         train, val, test = _train_test_split(self.data, 'race_date', perc)
         
         return train, val, test
+    
+def pairwise_sampler(data, sample_perc=0.5):
+    from numpy.random import randint
+
+    data_race_participants = data.groupby(['race_key'])['dr'].max()
+    data_remix = data.set_index(['race_key', 'pla'])
+
+    base_index = []
+    sample_index = []
+
+    race_keys = data_race_participants.index.tolist()
+    for race_key in race_keys:
+        num_of_participants = data_race_participants[race_key]
+        for ix in range(1, num_of_participants+1):
+            num_samples = int(sample_perc*(num_of_participants-ix))
+            if num_samples<1:
+                continue
+            sample_ixs = randint(ix, num_of_participants+1, num_samples)
+            base_index.extend([(race_key, ix) for _ in sample_ixs])
+            sample_index.extend([(race_key, sample_ix) for sample_ix in sample_ixs])
+
+    base_index = pd.Index(base_index)
+    sample_index = pd.Index(sample_index)
+
+    valid_ix_cond1 = base_index.isin(data_remix.index)
+    valid_ix_cond2 = sample_index.isin(data_remix.index)
+    valid_ix = valid_ix_cond1.__and__(valid_ix_cond2)
+
+    sampled_x1 = data_remix.loc[base_index[valid_ix]].reset_index()
+    sampled_x2 = data_remix.loc[sample_index[valid_ix]].reset_index()
+
+    return sampled_x1, sampled_x2

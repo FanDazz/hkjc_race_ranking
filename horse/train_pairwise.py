@@ -18,15 +18,6 @@ TODO:
 
 """
 
-
-""" IDEAS
-task -> way: default as prediction
-loss
-model
-lr
-wd
-"""
-
 import os
 import time
 import argparse
@@ -59,7 +50,7 @@ parser.add_argument('--p_dropout', default=0.1, type=float, help='Probability of
 parser.add_argument('--layer_size_reduction', default=0.5, type=float, help='Layer size reduction for MLP')
 # 
 parser.add_argument('--use_numeric', default=False, type=bool, help='If use Numeric Features')
-parser.add_argument('--do_pairsise', default=False, type=bool, help='If use pairwise training')
+parser.add_argument('--do_pairsise', default=True, type=bool, help='If use pairwise training')
 parser.add_argument('--sampling_perc', default=0.8, type=float, help='Sampling percentage for pairwise learning')
 
 parser.add_argument('--use_cuda', default=True, type=bool, help='If train on cuda')
@@ -128,7 +119,7 @@ base_params = { # public params
     , 'n_num_feats':n_num_feats
     , 'k_dim_field':k_dim_field
     , 'k_dim_id':k_dim_id
-    , 'need_activation':True
+    , 'need_activation':False
 }
 
 model_param_dict = {
@@ -161,10 +152,10 @@ def get_feats(data, numerical_cols, y_col, use_cuda=False):
     X = (num, d, f, j, h, t)
     return X, y
 
-def horse_data_loader(X, y, batch_size, shuffle):
+def horse_pairwise_data_loader(X1, X2, batch_size, shuffle):
     from torch.utils.data import DataLoader
 
-    return DataLoader(list(zip(*X, y)), batch_size=batch_size, shuffle=shuffle)
+    return DataLoader(list(zip(X1, X2)), batch_size=batch_size, shuffle=shuffle)
 
 def prep_eval_data(perform, use_cuda):
     """
@@ -195,7 +186,6 @@ def computeAP(dataset, model, way='min', use_cuda=False):
 use_cuda = args.use_cuda
 compute_device = device('cuda') if use_cuda else device('cpu')
 # data
-X_train, y_train = get_feats(train, numerical_cols, y_col, use_cuda)
 # model, optim
 model = model.to(compute_device)
 opt = optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
@@ -207,19 +197,32 @@ test_ap_by_ep = []
 for ep in range(args.epoch):
     t0 = time.time()
     ep_loss = []
-    for batch_data in horse_data_loader(X_train, y_train, args.batch_size, shuffle=True):
-        x, d, f, j, h, t, y = batch_data
+    train_quick, train_slow = pairwise_sampler(train, args.sample_perc)
+    Xs1, _ = get_feats(train_quick, numerical_cols, y_col, use_cuda)
+    Xs2, _ = get_feats(train_slow, numerical_cols, y_col, use_cuda)
+
+    for batch_data in horse_pairwise_data_loader(Xs1, Xs2, args.batch_size, shuffle=True):
+        (x1, d1, f1, j1, h1, t1), (x2, d2, f2, j2, h2, t2) = batch_data
         model.zero_grad()
 
-        x = autograd.Variable(x)
-        d = autograd.Variable(d)
-        f = autograd.Variable(f)
-        j = autograd.Variable(j)
-        h = autograd.Variable(h)
-        t = autograd.Variable(t)
+        x1 = autograd.Variable(x1)
+        d1 = autograd.Variable(d1)
+        f1 = autograd.Variable(f1)
+        j1 = autograd.Variable(j1)
+        h1 = autograd.Variable(h1)
+        t1 = autograd.Variable(t1)
 
-        y_pred = model(x, d, f, j, h, t)
-        loss = BCELoss(y_pred, y)
+        x2 = autograd.Variable(x2)
+        d2 = autograd.Variable(d2)
+        f2 = autograd.Variable(f2)
+        j2 = autograd.Variable(j2)
+        h2 = autograd.Variable(h2)
+        t2 = autograd.Variable(t2)
+
+        y_pred1 = model(x1, d1, f1, j1, h1, t1)
+        y_pred2 = model(x2, d2, f2, j2, h2, t2)
+
+        loss = LogSigmoidLoss(y_pred1, y_pred2)
         loss.mean().backward()
         opt.step()
 
