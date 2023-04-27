@@ -20,30 +20,29 @@ parser.add_argument('--model',default="logistic",help='selection of models')
 ######################################################
 #                  Models Parameters                 #
 ######################################################
-parser.add_argument('--penalty',default="l1")
-parser.add_argument('--solver',default="liblinear")
-parser.add_argument('--C',default=0.5)
-parser.add_argument('--max_iter',default=1000)
-parser.add_argument('--criterion',default="entropy")
-parser.add_argument('--random_state',default=8017)
-parser.add_argument('--splitter',default='random')
-parser.add_argument('--max_depth',default=10)
-parser.add_argument('--min_samples_leaf',default=10)
-parser.add_argument('--min_samples_split',default=10)
-parser.add_argument('--n_estimators',default=50)
-parser.add_argument('--learning_rate',default=0.1)
-parser.add_argument('--algorithm',default='SAMME.R')
-parser.add_argument('--base_estimator',default='deprecated')
-parser.add_argument('--alpha',default=1.0)
-parser.add_argument('--loss',default='linear')
-parser.add_argument('--tree_method',default="gpu_hist")
-parser.add_argument('--min_child_weight',default=1)
-parser.add_argument('--subsample',default=0.8)
-parser.add_argument('--colsample_bytree',default=0.8)
-parser.add_argument('--reg_alpha',default=0.0001)
-parser.add_argument('--reg_lambda',default=0.0001)
-parser.add_argument('--objective',default="binary:logistic")
-parser.add_argument('--eval_metric',default='mae')
+parser.add_argument('--penalty', type=str, default="l1")
+parser.add_argument('--solver', type=str, default="liblinear")
+parser.add_argument('--C', type=float, default=0.5)
+parser.add_argument('--max_iter', type=int, default=1000)
+parser.add_argument('--criterion', type=str, default="entropy")
+parser.add_argument('--random_state', type=int, default=8017)
+parser.add_argument('--splitter', type=str, default='random')
+parser.add_argument('--max_depth', type=int, default=10)
+parser.add_argument('--min_samples_leaf', type=int, default=10)
+parser.add_argument('--min_samples_split', type=int, default=10)
+parser.add_argument('--n_estimators', type=int, default=50)
+parser.add_argument('--learning_rate', type=float, default=0.1)
+parser.add_argument('--algorithm', type=str, default='SAMME')
+parser.add_argument('--alpha', type=float, default=1.0)
+parser.add_argument('--loss', type=str, default='linear')
+parser.add_argument('--tree_method', type=str, default="gpu_hist")
+parser.add_argument('--min_child_weight', type=int, default=1)
+parser.add_argument('--subsample', type=float, default=0.8)
+parser.add_argument('--colsample_bytree', type=float, default=0.8)
+parser.add_argument('--reg_alpha', type=float, default=0.0001)
+parser.add_argument('--reg_lambda', type=float, default=0.0001)
+parser.add_argument('--objective', type=str, default="binary:logistic")
+parser.add_argument('--eval_metric', type=str, default='mae')
 args = parser.parse_args()
 
 param = {
@@ -60,7 +59,6 @@ param = {
     "n_estimators": args.n_estimators,
     "learning_rate": args.learning_rate,
     "algorithm": args.algorithm,
-    "base_estimator": args.base_estimator,
     "alpha": args.alpha,
     "loss": args.loss,
     "tree_method": args.tree_method,
