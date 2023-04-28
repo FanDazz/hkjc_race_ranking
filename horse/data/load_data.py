@@ -5,6 +5,7 @@ warnings.filterwarnings('ignore')
 """
 path
 scale
+mapping_or_dummy
 """
 
 def col2ix(df_col:pd.Series):
@@ -30,51 +31,120 @@ def zscore_standarlization(col):
     return mean, std, col_standarlize
 
 
-file_root = './horse/data/perform_clean.csv'
+file_root = './horse/data/perform_full.csv'
 y_cols = ['is_champ', 'pla', 'finish_time', 'speed']
 date_cols = ['race_key', 'race_date']
 scaling_cols = ['distance', 'race_money', 'act_wt', 'declare_horse_wt']
+best_feat = [
+    'distance',
+     'race_money',
+     'act_wt',
+     'declare_horse_wt',
+     'horse_bestperform_h',
+     'horse_elo',
+     'horse_elo_course',
+     'horse_last_comp_days',
+     'horse_life_time_d',
+     'horse_racenum_y',
+     'horse_showups',
+     'horse_top4_rate_y',
+     'jockey_champ_h',
+     'jockey_champ_last5',
+     'jockey_champ_y',
+     'jockey_champ_m',
+     'jockey_champ_d',
+     'jockey_champ_rate_d',
+     'jockey_elo',
+     'jockey_elo_course',
+     'jockey_last_comp_days',
+     'jockey_life_time_d',
+     'jockey_place_h',
+     'jockey_place_y',
+     'jockey_racenum_y',
+     'jockey_racenum_m',
+     'jockey_racenum_d',
+     'jockey_showups',
+     'jockey_top4_h',
+     'jockey_top4_y',
+     'jockey_top4_d',
+     'trainer_champ_h',
+     'trainer_champ_last5',
+     'trainer_champ_y',
+     'trainer_champ_rate_y',
+     'trainer_champ_m',
+     'trainer_champ_d',
+     'trainer_champ_rate_d',
+     'trainer_elo',
+     'trainer_elo_course',
+     'trainer_last_comp_days',
+     'trainer_life_time_d',
+     'trainer_place_h',
+     'trainer_place_y',
+     'trainer_place_rate_y',
+     'trainer_racenum_y',
+     'trainer_racenum_m',
+     'trainer_racenum_d',
+     'trainer_showups',
+     'trainer_top4_h',
+     'trainer_top4_y',
+     'trainer_top4_rate_y',
+     'trainer_top4_m',
+     'trainer_top4_d'
+]
+
 get_x_cols = lambda x: [col for col in x if (col not in y_cols) and (col not in date_cols)]
 
 class DataSet:
-    def __init__(self, path=file_root, scaling=True) -> None:
+    def __init__(self, path=file_root, scaling=True, do_categorization=False, use_best_feats=True) -> None:
         self.data = pd.read_csv(path, sep=',', encoding='utf-8')
         self.data = self._pre_cleanse()
         self.x_cols = get_x_cols(self.data.columns)
-        self.data = self.categorization()
+        if do_categorization:
+            self.do_categorization()
         if scaling:
             self.scaling_info = {}
-            self.data = self.scaling(scaling_cols)
+            self.do_scaling(scaling_cols)
+        if use_best_feats:
+            self.do_best_feats()
 
     def _pre_cleanse(self, ):
         self.data['speed'] = self.data['distance']/self.data['finish_time']
         self.data['is_champ'] = self.data['pla'].apply(lambda x: 1 if x==1 else 0)
-        return self.data
-
-    def categorization(self, ):
         self.data['course_type'] = self.data['course_type'].replace({'全天候跑道':0, '草地':1})
-        # mapping dict
-        self.ix2dr, self.dr2ix = col2ix(self.data['dr'])
-        self.ix2field, self.field2ix = col2ix(self.data['field_going'])
-        self.ix2jockey, self.jockey2ix = col2ix(self.data['jockey'])
-        self.ix2horse, self.horse2ix = col2ix(self.data['horse'])
-        self.ix2trainer, self.trainer2ix = col2ix(self.data['trainer'])
-        # perform after mapping
-        self.data['dr_ix'] = self.data['dr'].apply(lambda x: self.dr2ix[x])
-        self.data['field_going'] = self.data['field_going'].apply(lambda x: self.field2ix[x])
-        self.data['jockey'] = self.data['jockey'].apply(lambda x: self.jockey2ix[x])
-        self.data['horse'] = self.data['horse'].apply(lambda x: self.horse2ix[x])
-        self.data['trainer'] = self.data['trainer'].apply(lambda x: self.trainer2ix[x])
-
         return self.data
+
+    def do_categorization(self, do_dummy=False
+                           , categ_cols=['dr_ix', 'horse', 'jockey', 'trainer', 'field_going']):
+        if not do_dummy:
+            # mapping dict
+            self.ix2dr, self.dr2ix = col2ix(self.data['dr'])
+            self.ix2field, self.field2ix = col2ix(self.data['field_going'])
+            self.ix2jockey, self.jockey2ix = col2ix(self.data['jockey'])
+            self.ix2horse, self.horse2ix = col2ix(self.data['horse'])
+            self.ix2trainer, self.trainer2ix = col2ix(self.data['trainer'])
+            # perform after mapping
+            self.data['dr_ix'] = self.data['dr'].apply(lambda x: self.dr2ix[x])
+            self.data['field_going'] = self.data['field_going'].apply(lambda x: self.field2ix[x])
+            self.data['jockey'] = self.data['jockey'].apply(lambda x: self.jockey2ix[x])
+            self.data['horse'] = self.data['horse'].apply(lambda x: self.horse2ix[x])
+            self.data['trainer'] = self.data['trainer'].apply(lambda x: self.trainer2ix[x])
+        else:
+            self.data = pd.get_dummies(self.data, columns=categ_cols)
+
+        return self
     
-    def scaling(self, scaling_cols):
+    def do_scaling(self, scaling_cols):
         for col in scaling_cols:
             self.scaling_info[col] = {}
             self.scaling_info[col]['mean'], self.scaling_info[col]['std'], self.data[col] = zscore_standarlization(self.data[col])
 
-        return self.data
-
+        return self
+    
+    def do_best_feats(self, target='is_champ'):
+        cols = date_cols + best_feat + [target, 'pla']
+        self.data = self.data[cols]
+        return self
+    
     def train_val_test_split(self, perc=[0.8, 0.1, 0.1]):
 
         def _train_test_split(data, col, perc=[0.8, 0.1, 0.1]):
@@ -91,35 +161,3 @@ class DataSet:
         train, val, test = _train_test_split(self.data, 'race_date', perc)
         
         return train, val, test
-    
-def pairwise_sampler(data, sample_perc=0.5):
-    from numpy.random import randint
-
-    data_race_participants = data.groupby(['race_key'])['dr'].max()
-    data_remix = data.set_index(['race_key', 'pla'])
-
-    base_index = []
-    sample_index = []
-
-    race_keys = data_race_participants.index.tolist()
-    for race_key in race_keys:
-        num_of_participants = data_race_participants[race_key]
-        for ix in range(1, num_of_participants+1):
-            num_samples = int(sample_perc*(num_of_participants-ix))
-            if num_samples<1:
-                continue
-            sample_ixs = randint(ix, num_of_participants+1, num_samples)
-            base_index.extend([(race_key, ix) for _ in sample_ixs])
-            sample_index.extend([(race_key, sample_ix) for sample_ix in sample_ixs])
-
-    base_index = pd.Index(base_index)
-    sample_index = pd.Index(sample_index)
-
-    valid_ix_cond1 = base_index.isin(data_remix.index)
-    valid_ix_cond2 = sample_index.isin(data_remix.index)
-    valid_ix = valid_ix_cond1.__and__(valid_ix_cond2)
-
-    sampled_x1 = data_remix.loc[base_index[valid_ix]].reset_index()
-    sampled_x2 = data_remix.loc[sample_index[valid_ix]].reset_index()
-
-    return sampled_x1, sampled_x2
