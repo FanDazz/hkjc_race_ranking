@@ -21,6 +21,7 @@ class HKJC_models():
     def logistic_regression(self):
         from sklearn.linear_model import LogisticRegression
         model = LogisticRegression(penalty=self.param["penalty"],
+                                   random_state=self.param["random_state"],
                                    solver=self.param["solver"],
                                    C=self.param["C"],
                                    max_iter=self.param["max_iter"])
@@ -51,8 +52,8 @@ class HKJC_models():
         model = AdaBoostClassifier(n_estimators=self.param["n_estimators"],
                                    learning_rate=self.param["learning_rate"],
                                    algorithm=self.param["algorithm"],
-                                   random_state=self.param["random_state"],
-                                   base_estimator=self.param["base_estimator"])
+                                   random_state=self.param["random_state"]
+        )
         return model
 
     def ridge_regression(self):
@@ -86,8 +87,7 @@ class HKJC_models():
         model = AdaBoostRegressor(n_estimators=self.param["n_estimators"],
                                    learning_rate=self.param["learning_rate"],
                                    loss=self.param["loss"],
-                                   random_state=self.param["random_state"],
-                                   base_estimator=self.param["base_estimator"])
+                                   random_state=self.param["random_state"])
         return model
 
     def xgb_classifier(self):
