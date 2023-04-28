@@ -45,7 +45,10 @@ from process import racing_champ, AveragePrecision
 ########################################################
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset_path', default='./horse/data/perform_clean.csv', type=str, help='Path of the dataset')
+parser.add_argument('--dataset_path', default='./horse/data/perform_full.csv', type=str, help='Path of the dataset')
+parser.add_argument('--do_categorization', default=True, type=bool, help='Categorize data into dummy/id')
+parser.add_argument('--do_dummy', default=False, type=bool, help='If use dummy, if turned on, or do mapping into ids, if turned off')
+parser.add_argument('--use_best_feats', default=True, type=bool, help='If use the best subset of features')
 parser.add_argument('--do_scale', default=True, type=bool, help='If use scaling to process some fields of the data')
 parser.add_argument('--train_size', default=0.8, type=float, help='Perc of days of data to be trained')
 parser.add_argument('--val_size', default=0.1, type=float, help='Perc of days of data to be treated as validation dataset')
@@ -75,7 +78,8 @@ print(f'ARGUMENTS: {args}\n')
 ########################################################
 ##################### Load Dataset #####################
 ########################################################
-dataset = DataSet(args.dataset_path, scaling=args.do_scale)
+dataset = DataSet(args.dataset_path, scaling=args.do_scale, do_categorization=args.do_categorization
+                  , do_dummy=args.do_dummy, use_best_feats=args.use_best_feats)
 perc = [args.train_size, args.val_size, args.test_size]
 train, val, test = dataset.train_val_test_split(perc)
 n_dr = dataset.data['dr'].nunique()
