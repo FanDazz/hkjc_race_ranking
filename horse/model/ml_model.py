@@ -177,6 +177,7 @@ class HKJC_models():
             return (merge_df.iloc[:, 1]==merge_df.iloc[:, 2]).sum()/merge_df.shape[0]
         
         def racing_champ(df):
+            print(df.columns)
             return df[df['pla']==1][['race_key', 'dr']]
 
         if model_target == "is_champ":
