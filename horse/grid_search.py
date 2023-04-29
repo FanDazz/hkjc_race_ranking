@@ -7,73 +7,42 @@ import numpy as np
 parser = argparse.ArgumentParser(description='GridSearch')
 parser.add_argument('--model_name')
 parser.add_argument('--result_path', default='')
-parser.add_argument('--train_file_path', default='/Users/2ee8/Subject/hku/s2/STAT8017/hkjc_race_ranking/horse/ml_train.py')
+parser.add_argument('--train_file_path', default='/horse/ml_train.py')
 args = parser.parse_args()
 models = { "logistic":{
-                    'penalty' : ['l2'],
-                    'solver' : ['lbfgs'],
-                    'max_iter' : [1000, 5000, 500],
+                    'penalty' : ['l1'],
+                    'solver' : ['liblinear'],
+                    'max_iter' : [1000, 5000, 1000],
                     'C': [0.1,1,0.1]
                         },
             "dtc":{
                     'criterion' : ['gini', 'entropy', 'log_loss'],
                     'splitter' : ['best', 'random'],
-                    'max_depth' : [2, 20, 1], # int
-                    'min_samples_leaf' : [2, 10, 1], #int and float
-                    'min_samples_split' : [2, 10, 1]
+                    'max_depth' : [2, 20, 5], # int
+                    'min_samples_leaf' : [2, 10, 5], #int and float
+                    'min_samples_split' : [2, 10, 5]
                     },
             "rfc":{
                     'criterion' : ['gini', 'entropy', 'log_loss'],
-                    'max_depth' : [2, 3, 1], # int
-                    'min_samples_leaf' : [2, 3, 1], #int and float
-                    'min_samples_split' : [2, 3, 1], #int and float
+                    'max_depth' : [2, 20, 5], # int
+                    'min_samples_leaf' : [2, 10, 5], #int and float
+                    'min_samples_split' : [2, 10, 5], #int and float
             },
             "adc":{
-                    'n_estimators' : [50, 60, 10], # int
-                    'learning_rate' : [5e-5, 5e-4, 1e-1], # float
+                    'n_estimators' : [100, 1000, 100], # int
+                    'learning_rate' : [5e-5, 5e-1, 5e-5], # float
                     'algorithm' : ['SAMME', 'SAMME.R'],
             },
-            "ridge":{
-                'alpha' : [0.01, 1, 0.01], # float
-                'solver' : ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga', 'lbfgs'],
-            },
-            "dtr":{
-                    'criterion' : ['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
-                    'splitter' : ['best', 'random'],
-                    'max_depth' : [2, 20, 1], # int
-                    'min_samples_leaf' : [2, 10, 1], #int and float
-                    'min_samples_split' : [2, 10, 1], #int and float
-            },
-            "rfr":{
-                    'criterion_reg' : ['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
-                    'max_depth' : [2, 20, 1], # int
-                    'min_samples_leaf' : [2, 10, 1], #int and float
-                    'min_samples_split' : [2, 10, 1], #int and float
-            },
-            "adr":{
-                    'n_estimators' : [50, 5000, 10], # int
-                    'learning_rate' : [5e-5, 1e-1, 1e-1], # float
-                    'loss' : ['linear', 'square', 'exponential']
-            },
+
             "xgbc":{
                 'colsample_bytree' : [0.5, 0.8, 0.1], # float
                 'reg_alpha' : [0.0001, 0.0002, 1], # float
                 'reg_lambda' : [0.0001, 0.0002, 1], # float
-                'max_depth' : [2, 20, 1], # int
-                'min_child_weight' : [1, 10, 1], # float
+                'max_depth' : [2, 20, 5], # int
+                'min_child_weight' : [1, 10, 5], # float
                 'subsample' : [0.5, 0.8, 0.1], # float
-                'n_estimators' : [50, 5000, 10], # int
-                'learning_rate' : [5e-4, 1e-1, 5e-1], # float
-            },
-            "xgbr":{
-                'colsample_bytree' : [0.5, 0.8, 0.1], # float
-                'reg_alpha' : [0.0001], # float
-                'reg_lambda' : [0.0001], # float
-                'min_child_weight' : [1, 10, 1], # float
-                'subsample' : [0.5, 0.8, 0.1], # float
-                'n_estimators' : [50, 5000, 10], # int
-                'learning_rate' : [5e-5, 1e-1, 1e-1], # float
-                'max_depth' : [2, 20, 1]
+                'n_estimators' : [100, 5000, 1000], # int
+                'learning_rate' : [5e-4, 1e-1, 5e-4], # float
             }
 }
 
@@ -116,5 +85,5 @@ def get_result(model:str):
             continue
     pd.DataFrame.from_dict(result).to_csv('{}{}.csv'.format(args.result_path, model))
 
-
-get_result(args.model_name)
+for model in models.keys():
+    get_result(model)
