@@ -2,6 +2,7 @@ import os, argparse
 from itertools import product
 import pandas as pd
 import numpy as np
+import re
 
 def log_lin_space(log_start, log_end, log_N, lin_N):
     """ Generate Tuning Space for params
@@ -43,12 +44,12 @@ def log_lin_space(log_start, log_end, log_N, lin_N):
 parser = argparse.ArgumentParser(description='GridSearch')
 parser.add_argument('--model_name')
 parser.add_argument('--result_path', default='')
-parser.add_argument('--train_file_path', default='./horse/ml_train.py')
+parser.add_argument('--train_file_path', default='./horse/train.py')
 args = parser.parse_args()
 
 common_grid = {'learning_rate':log_lin_space(-5, 0, 6, 1), 'weight_decay':log_lin_space(-5, 0, 6, 1)}
 
-models = {
+model_param_dict = {
     'LinEmbConcat': common_grid.copy()
     , 'LinEmbDotProd': common_grid.copy()
     , 'LinEmbElemProd': common_grid.copy()
@@ -60,37 +61,41 @@ def range_to_list(range_list):
 
 def get_result(model:str):
     print('Training {}....'.format(model))
-    for model_name in models.keys():
-        if model_name == model:
-            result = {'AP':[]}
-            temp = []
-            for params_name in models[model_name].keys():
-                result[params_name] = []
-                if isinstance(models[model_name][params_name][0], str):
-                    temp.append(models[model_name][params_name])
-                else:
-                    temp.append(range_to_list(models[model_name][params_name]))
-            combinations = product(*temp)
-            keys = [key for key in models[model_name].keys()]
-            for combine in combinations:
-                cmd = 'python {} --model {}'.format(args.train_file_path, model_name)
-                count = 0
-                temp = {}
-                for key in keys:
-                    temp[key] = []
-                for value in combine:
-                    cmd += ' --{paramname} {paramvalue}'.format(paramname=keys[count],paramvalue=value)
-                    result[keys[count]].append(value)
-                    count += 1
-                print(cmd)
-                cmd_result = os.popen(cmd)
-                #print(cmd_result.readlines())
-                ap = cmd_result.readlines()[1].split(':')[-1].strip()
-                result['AP'].append(ap)
-            print(result)
-        else:
-            continue
-    pd.DataFrame.from_dict(result).to_csv('{}{}.csv'.format(args.result_path, model))
+    params_to_tune = model_param_dict[model]
+    param_names = list(params_to_tune.keys()) 
+    param_comb_generator = product(*params_to_tune.values())
+    for param_comb in param_comb_generator:
+        # result saving dict for each model
+        result = {'ep':[], 'val_AP':[], 'test_AP':[]}
+        # generate command
+        cmd = f'python {args.train_file_path} --model {model}'
+        for ix, value in enumerate(param_comb):
+            cmd += f' --{param_names[ix]} {value}'
+        print(cmd)
+        cmd_result = os.popen(cmd)
+        for line in cmd_result.readlines():
+            ep_ = re.findall(r'Iter=(.*?),', line)
+            val_AP_ = re.findall(r'\[VAL\] AP=(.*?);', line)
+            test_AP_ = re.findall(r'\[TEST\] AP=(.*?);', line)
+            
+            result['ep'].append(ep_)
+            result['val_AP'].append(val_AP_)
+            result['test_AP'].append(test_AP_)
+        
+        # file name
+        
+        file_name = f'{model}'
+        for ix, value in enumerate(param_comb):
+            file_name += f'_{param_names[ix]}_{value}'
+        file_name += '.csv'
+        
+        pd.DataFrame.from_dict(result).to_csv(f'{args.result_path}/{file_name}', index=False)
 
 
-get_result(args.model_name)
+if __name__ == "__main__":
+    # 1) make dir, if not exist
+    if not os.path.exists(args.result_path):
+        os.makedirs(args.result_path)
+        
+    # 2) grid search
+    get_result(args.model_name)

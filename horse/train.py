@@ -240,5 +240,4 @@ for ep in range(args.epoch):
     test_ap_by_ep.append(computeAP(test, model, way='max', use_cuda=use_cuda))
     
     t1 = time.time()
-    print(f'[{round(t1-t0, 3)}s] Iter={ep}, train loss={round(train_loss_by_ep[-1], 3)}')
-    print(f'\t [VAL] AP={round(val_ap_by_ep[-1], 3)}; [TEST] AP={round(test_ap_by_ep[-1], 3)}')
+    print(f'[{round(t1-t0, 3)}s] Iter={ep}, train loss={round(train_loss_by_ep[-1], 3)} [VAL] AP={round(val_ap_by_ep[-1], 3)}; [TEST] AP={round(test_ap_by_ep[-1], 3)};')
