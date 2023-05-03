@@ -28,14 +28,15 @@ class _BaseModel(nn.Module):
         self.emb_horse = nn.Embedding(n_horse, k_dim_id)
         self.emb_trainer = nn.Embedding(n_trainer, k_dim_id)
         # output layer
+        self.relu = nn.ReLU()
         self.Linear = nn.Linear(self.out_dim, 1)
         # init all dims
-        nn.init.normal_(self.Linear.weight, mean=0, std=0.1)
-        nn.init.normal_(self.emb_dr.weight, mean=0, std=0.1)
-        nn.init.normal_(self.emb_field.weight, mean=0, std=0.1)
-        nn.init.normal_(self.emb_jockey.weight, mean=0, std=0.1)
-        nn.init.normal_(self.emb_horse.weight, mean=0, std=0.1)
-        nn.init.normal_(self.emb_trainer.weight, mean=0, std=0.1)
+        nn.init.kaiming_normal_(self.Linear.weight)
+        nn.init.kaiming_normal_(self.emb_dr.weight)
+        nn.init.kaiming_normal_(self.emb_field.weight)
+        nn.init.kaiming_normal_(self.emb_jockey.weight)
+        nn.init.kaiming_normal_(self.emb_horse.weight)
+        nn.init.kaiming_normal_(self.emb_trainer.weight)        
 
     def forward(self, x, dr, field, jockey, horse, trainer):
         pass
@@ -63,7 +64,8 @@ class LinEmbConcat(_BaseModel):
         emb_h = self.emb_horse(horse)
         emb_t = self.emb_trainer(trainer)
         # out layer
-        out = self.Linear(torch.concat([x, emb_d, emb_f, emb_j, emb_h, emb_t], 1))
+        out = torch.concat([x, emb_d, emb_f, emb_j, emb_h, emb_t], 1)
+        out = self.Linear(self.relu(out))
         out = self.activation(out)
         return out
     
@@ -82,14 +84,15 @@ class LinEmbDotProd(_BaseModel):
                                             , n_num_feats, k_dim_field, k_dim_id
                                             , need_activation)
         self.Linear_field = nn.Linear(k_dim_field, 1)
-        self.Linear_dr = nn.Linear(n_dr, 1)
+        self.Linear_dr = nn.Linear(k_dim_field, 1)
         # init all dims
-        nn.init.normal_(self.Linear_field.weight, mean=0, std=0.1)
-        nn.init.normal_(self.Linear_dr.weight, mean=0, std=0.1)
+        nn.init.kaiming_normal_(self.Linear_field.weight)
+        nn.init.kaiming_normal_(self.Linear_dr.weight)
+
 
     def forward(self, x, dr, field, jockey, horse, trainer):
         # lookup layer
-        emb_d = self.emb_field(dr)
+        emb_d = self.emb_dr(dr)
         emb_f = self.emb_field(field)
         emb_j = self.emb_jockey(jockey)
         emb_h = self.emb_horse(horse)
@@ -100,7 +103,8 @@ class LinEmbDotProd(_BaseModel):
         hj_val = torch.matmul(emb_h, emb_j.T).sum(1).unsqueeze(1)
         ht_val = torch.matmul(emb_h, emb_t.T).sum(1).unsqueeze(1)
         # out layer
-        out = self.Linear(torch.concat([x, d_val, f_val, hj_val, ht_val],1))
+        out = torch.concat([x, d_val, f_val, hj_val, ht_val],1)
+        out = self.Linear(self.relu(out))
         out = self.activation(out)
         return out
     
@@ -117,7 +121,7 @@ class LinEmbElemProd(_BaseModel):
         super(LinEmbElemProd, self).__init__(n_dr, n_field
                                              , n_jockey, n_horse, n_trainer
                                              , n_num_feats, k_dim_field, k_dim_id
-                                             , need_activation)   
+                                             , need_activation)  
 
     def forward(self, x, dr, field, jockey, horse, trainer):
         # lookup
@@ -130,7 +134,8 @@ class LinEmbElemProd(_BaseModel):
         hj_val = torch.mul(emb_h, emb_j)
         ht_val = torch.mul(emb_h, emb_t)
         # out Layer
-        out = self.Linear(torch.concat([x, emb_d, emb_f, hj_val, ht_val], 1))
+        out = torch.concat([x, emb_d, emb_f, hj_val, ht_val], 1)
+        out = self.Linear(self.relu(out))
         return self.activation(out)
     
     def compute_out_dim(self, n_num_feats, k_dim_field, k_dim_id):
@@ -149,7 +154,7 @@ class EmbMLP(_BaseModel):
                                      , n_num_feats, k_dim_field, k_dim_id
                                      , need_activation)  
         # MLP
-        feat_dim = n_num_feats + 2*k_dim_field + 2*k_dim_id
+        feat_dim = n_num_feats + 2*k_dim_field + 3*k_dim_id
         MLP_sizes = [int(feat_dim*(layer_size_reduction**i)) for i in range(num_layers+1)]
         MLP_Layer=[]
         for i in range(num_layers):
@@ -159,6 +164,9 @@ class EmbMLP(_BaseModel):
         self.MLP_Layer = nn.Sequential(*MLP_Layer)
         self.out_dim = MLP_sizes[-1]
         self.Linear = nn.Linear(self.out_dim, 1)
+        for layer in self.MLP_Layer:
+            if isinstance(layer, nn.Linear):
+                nn.init.kaiming_normal_(layer.weight)
 
     def forward(self, x, dr, field, jockey, horse, trainer):
         # lookup
@@ -168,9 +176,9 @@ class EmbMLP(_BaseModel):
         emb_h = self.emb_horse(horse)
         emb_t = self.emb_trainer(trainer)
         # interaction layer
-        hj_val = torch.mul(emb_h, emb_j)
-        ht_val = torch.mul(emb_h, emb_t)
-        out = torch.concat([x, emb_d, emb_f, hj_val, ht_val], 1)
+#         hj_val = torch.mul(emb_h, emb_j)
+#         ht_val = torch.mul(emb_h, emb_t)
+        out = torch.concat([x, emb_d, emb_f, emb_j, emb_h, emb_t], 1)
         # MLP layer
         out = self.MLP_Layer(out)
         # out layer

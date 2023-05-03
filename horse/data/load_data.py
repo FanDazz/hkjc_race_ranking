@@ -42,9 +42,9 @@ def train_val_test_split(data, col, perc=[0.8, 0.1, 0.1]):
     return train, val, test
 
 file_root = './horse/data/perform_full.csv'
-y_cols = ['is_champ', 'pla', 'finish_time', 'speed']
+y_cols = ['is_champ', 'pla', 'finish_time', 'speed', 'is_champ', 'horse_is_champ', 'horse_is_place', 'horse_is_top4', 'jockey_is_champ', 'jockey_is_place', 'jockey_is_top4', 'trainer_is_champ', 'trainer_is_place', 'trainer_is_top4', 'win_odds']
 date_cols = ['race_key', 'race_date']
-scaling_cols = ['distance', 'race_money', 'act_wt', 'declare_horse_wt']
+dummy_cols = ['dr', 'dr_ix', 'field_going', 'jockey' ,'horse', 'trainer']
 best_feat = [
     'race_money',
     'horse_bestperform_h',
@@ -70,7 +70,8 @@ best_feat = [
     'trainer_top4_rate_m'
 ]
 
-get_x_cols = lambda x: [col for col in x if (col not in y_cols) and (col not in date_cols)]
+get_x_cols = lambda x: [col for col in x if (col not in y_cols+date_cols)]
+get_scaling_cols = lambda x: [col for col in x if (col not in y_cols+date_cols+dummy_cols)]
 
 class DataSet:
     """ Call Dataset from src.
@@ -84,6 +85,7 @@ class DataSet:
     def __init__(self, path=file_root, scaling=True
                                      , do_categorization=False
                                      , use_best_feats=True) -> None:
+        self.categorize=do_categorization
         self.data = pd.read_csv(path, sep=',', encoding='utf-8')
         self.data = self._pre_cleanse()
         self.x_cols = get_x_cols(self.data.columns)
@@ -91,9 +93,14 @@ class DataSet:
             self.do_categorization()
         if scaling:
             self.scaling_info = {}
+            scaling_cols = get_scaling_cols(self.data.columns)
+#             print(f'Scaling cols: {scaling_cols}')
             self.do_scaling(scaling_cols)
         if use_best_feats:
             self.do_best_feats()
+        else:
+            self.do_not_use_best_feats()
+
 
     def _pre_cleanse(self, ):
         self.data['speed'] = self.data['distance']/self.data['finish_time']
@@ -125,13 +132,25 @@ class DataSet:
         return self
     
     def do_best_feats(self, target='is_champ'):
-        cols = date_cols + best_feat + [target, 'pla', 'dr']
+        categ_cols = ['dr', 'field_going', 'jockey', 'horse', 'trainer']
+        if self.categorize:
+            categ_cols += ['dr_ix']
+        cols = date_cols + categ_cols + best_feat + [target, 'pla']
+        self.data = self.data[cols]
+        
+        return self
+    
+    def do_not_use_best_feats(self, target='is_champ'):
+        categ_cols = ['dr', 'field_going', 'jockey', 'horse', 'trainer']
+        numeric_cols = get_scaling_cols(self.data.columns)
+        if self.categorize:
+            categ_cols += ['dr_ix']
+        cols = date_cols + numeric_cols + categ_cols + [target, 'pla']
         self.data = self.data[cols]
         
         return self
     
     def my_train_val_test_split(self, perc=[0.8, 0.1, 0.1]):
-
         train, val, test = train_val_test_split(self.data, 'race_date', perc)
         
         return train, val, test

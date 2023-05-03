@@ -9,6 +9,7 @@
        jockey, horse, trainer.
 
     2. Pairwise training 
+        See another file
 
 TODO:
 1. SAVE MODEL
@@ -35,7 +36,7 @@ import numpy as np
 from torch import autograd, device, optim \
                   , FloatTensor, LongTensor
 
-from data.load_data import DataSet, pairwise_sampler
+from data.load_data import DataSet
 from model import BCELoss, MSELoss, LogSigmoidLoss
 from model import LinEmbConcat, LinEmbDotProd, LinEmbElemProd, EmbMLP
 from process import racing_champ, AveragePrecision
@@ -45,26 +46,27 @@ from process import racing_champ, AveragePrecision
 ########################################################
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset_path', default='./horse/data/perform_full.csv', type=str, help='Path of the dataset')
+# Basics
+parser.add_argument('--dataset_path', default='./horse/data/perform_full_feature.csv', type=str, help='Path of the dataset')
 parser.add_argument('--do_categorization', default=True, type=bool, help='Categorize data into dummy/id')
-parser.add_argument('--do_dummy', default=False, type=bool, help='If use dummy, if turned on, or do mapping into ids, if turned off')
-parser.add_argument('--use_best_feats', default=True, type=bool, help='If use the best subset of features')
 parser.add_argument('--do_scale', default=True, type=bool, help='If use scaling to process some fields of the data')
 parser.add_argument('--train_size', default=0.8, type=float, help='Perc of days of data to be trained')
 parser.add_argument('--val_size', default=0.1, type=float, help='Perc of days of data to be treated as validation dataset')
 parser.add_argument('--test_size', default=0.1, type=float, help='Perc of days of data to be tested')
 
+# Model Offset
 parser.add_argument('--model_name', default='EmbMLP', type=str, help='Name of model to be recalled')
 parser.add_argument('--k_dim_field', default=4, type=int, help='Embedding dimension of field, dr')
 parser.add_argument('--k_dim_id', default=32, type=int, help='Embedding dimension of horse, jockey, trainer')
 parser.add_argument('--num_layers', default=2, type=int, help='Number of layers for MLP model')
 parser.add_argument('--p_dropout', default=0.1, type=float, help='Probability of neurons to be turned of')
 parser.add_argument('--layer_size_reduction', default=0.5, type=float, help='Layer size reduction for MLP')
-# 
-parser.add_argument('--use_numeric', default=False, type=bool, help='If use Numeric Features')
-parser.add_argument('--do_pairsise', default=False, type=bool, help='If use pairwise training')
-parser.add_argument('--sampling_perc', default=0.8, type=float, help='Sampling percentage for pairwise learning')
 
+# Compare Effect of Features
+parser.add_argument('--use_numeric', default=False, type=bool, help='If use Numeric Features')
+parser.add_argument('--use_best_feats', default=False, type=bool, help='If use the best subset of features')
+
+# Training
 parser.add_argument('--use_cuda', default=True, type=bool, help='If train on cuda')
 parser.add_argument('--epoch', default=10, type=int, help='Num of epochs')
 parser.add_argument('--batch_size', default=20, type=int, help='Size of each batch to be learnt')
@@ -79,9 +81,9 @@ print(f'ARGUMENTS: {args}\n')
 ##################### Load Dataset #####################
 ########################################################
 dataset = DataSet(args.dataset_path, scaling=args.do_scale, do_categorization=args.do_categorization
-                  , do_dummy=args.do_dummy, use_best_feats=args.use_best_feats)
+                  , use_best_feats=args.use_best_feats)
 perc = [args.train_size, args.val_size, args.test_size]
-train, val, test = dataset.train_val_test_split(perc)
+train, val, test = dataset.my_train_val_test_split(perc)
 n_dr = dataset.data['dr'].nunique()
 n_field = dataset.data['field_going'].nunique()
 n_jockey = dataset.data['jockey'].nunique()
@@ -95,14 +97,19 @@ n_trainer = dataset.data['trainer'].nunique()
 ## Field Map
 # TODO: More targets?
 y_col = ['is_champ']
+candidate_target_cols = ['is_champ', 'pla', 'speed', 'win_odds']
+categ_cols = ['dr_ix', 'field_going', 'horse', 'jockey', 'trainer']
+key_cols = ['race_key', 'race_date', 'dr']
 # TODO: Adding more features!
 if args.use_numeric:
-    numerical_cols = ['distance', 'course_type', 'race_money', 'act_wt', 'declare_horse_wt']
+    numerical_cols = [col for col in dataset.data.columns if col not in candidate_target_cols+categ_cols+key_cols]
 else:
     numerical_cols = []
 n_num_feats = len(numerical_cols)
-categ_cols = ['dr_ix', 'field_going', 'horse', 'jockey', 'trainer']
+# print(f'{n_num_feats} numeric cols: {numerical_cols}')
 x_cols = numerical_cols + categ_cols
+# print(f'All features: {x_cols}\n')
+
 ## Model Map
 model_map = {
     'LinEmbConcat': LinEmbConcat
@@ -143,6 +150,7 @@ model_param_dict = {
 }
 model = model_map[args.model_name]
 model_param = model_param_dict[args.model_name]
+print(f'Model param: {model_param}')
 model = model(**model_param) # pass dict of params to the model
 print(f'MODEL: {model}\n')
 
@@ -154,7 +162,7 @@ print(f'MODEL: {model}\n')
 def get_feats(data, numerical_cols, y_col, use_cuda=False):
     compute_device = device('cuda') if use_cuda else device('cpu')
 
-    num = FloatTensor(data[numerical_cols].values).to(compute_device)
+    x = FloatTensor(data[numerical_cols].values).to(compute_device)
     d = LongTensor(data['dr_ix'].values).to(compute_device)
     f = LongTensor(data['field_going'].values).to(compute_device)
     j = LongTensor(data['jockey'].values).to(compute_device)
@@ -162,7 +170,7 @@ def get_feats(data, numerical_cols, y_col, use_cuda=False):
     t = LongTensor(data['trainer'].values).to(compute_device)
     y = FloatTensor(data[y_col].values).to(compute_device)
 
-    X = (num, d, f, j, h, t)
+    X = (x, d, f, j, h, t)
     return X, y
 
 def horse_data_loader(X, y, batch_size, shuffle):
@@ -215,22 +223,17 @@ for ep in range(args.epoch):
         x, d, f, j, h, t, y = batch_data
         model.zero_grad()
 
-        x = autograd.Variable(x)
-        d = autograd.Variable(d)
-        f = autograd.Variable(f)
-        j = autograd.Variable(j)
-        h = autograd.Variable(h)
-        t = autograd.Variable(t)
-
         y_pred = model(x, d, f, j, h, t)
         loss = BCELoss(y_pred, y)
-        loss.mean().backward()
+        
+        opt.zero_grad()
+        loss.backward()
         opt.step()
 
-        ep_loss.append(loss.data.to(compute_device).tolist())
+        ep_loss.append(loss.data.to(device('cpu')).tolist())
 #         print(ep_loss)
 
-    train_loss_by_ep.append(np.sqrt(np.mean(ep_loss)))
+    train_loss_by_ep.append(np.mean(ep_loss))
     
     # compute AP
     val_ap_by_ep.append(computeAP(val, model, way='max', use_cuda=use_cuda))
