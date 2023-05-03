@@ -75,7 +75,7 @@ parser.add_argument('--weight_decay', default=1e-3, type=float, help='Intensity 
 parser.add_argument('--out_src', default='./output', type=str, help='Where the model to be saved')
 
 args = parser.parse_args()
-print(f'ARGUMENTS: {args}\n')
+# print(f'ARGUMENTS: {args}\n')
 
 ########################################################
 ##################### Load Dataset #####################
@@ -150,9 +150,9 @@ model_param_dict = {
 }
 model = model_map[args.model_name]
 model_param = model_param_dict[args.model_name]
-print(f'Model param: {model_param}')
+# print(f'Model param: {model_param}')
 model = model(**model_param) # pass dict of params to the model
-print(f'MODEL: {model}\n')
+# print(f'MODEL: {model}\n')
 
 
 ########################################################
