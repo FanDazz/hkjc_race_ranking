@@ -9,7 +9,7 @@ def MSELoss(input, target):
 def BCELoss(input, target):
     return nn.BCEWithLogitsLoss()(input, target)
 
-def LogSigmoidLoss(pred1, pred2):
+def PairwiseLoss(pred1, pred2):
     return -logsigmoid(pred1-pred2)
 
 # models

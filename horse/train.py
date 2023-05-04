@@ -37,7 +37,7 @@ from torch import autograd, device, optim \
                   , FloatTensor, LongTensor
 
 from data.load_data import DataSet
-from model import BCELoss, MSELoss, LogSigmoidLoss
+from model import BCELoss, MSELoss
 from model import LinEmbConcat, LinEmbDotProd, LinEmbElemProd, EmbMLP
 from process import racing_champ, AveragePrecision
 

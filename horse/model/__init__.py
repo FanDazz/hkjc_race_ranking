@@ -6,7 +6,7 @@ __name__ = [
     # Loss
     'MSELoss'
     , 'BCELoss'
-    , 'LogSigmoidLoss'
+    , 'PairwiseLoss'
     
     # Model
     , 'LinEmbConcat'
