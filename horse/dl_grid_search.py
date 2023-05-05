@@ -42,6 +42,13 @@ def log_lin_space(log_start, log_end, log_N, lin_N):
 
     return np.concatenate(lin_space)
 
+def merge_param(param1:dict, param2:dict):
+    """ Merge 2 set of params """
+    param = param1.copy()
+    for key in param2:
+        param[key] = param2[key]
+    return param
+
 parser = argparse.ArgumentParser(description='GridSearch')
 parser.add_argument('--model_name')
 parser.add_argument('--result_path', default='')
@@ -54,13 +61,13 @@ common_grid = {
     # tuned params
     , 'use_numeric': [False, True]
     , 'use_best_feats': [False, True]
-    , 'learning_rate':log_lin_space(-4, 0, 5, 1), 'weight_decay':log_lin_space(-4, 0, 5, 1)}
+    , 'learning_rate':log_lin_space(-5, 1, 6, 1), 'weight_decay':log_lin_space(-5, 1, 6, 1)}
 
 model_param_dict = {
     'LinEmbConcat': common_grid.copy()
     , 'LinEmbDotProd': common_grid.copy()
     , 'LinEmbElemProd': common_grid.copy()
-    , 'EmbMLP': common_grid.copy()
+    , 'EmbMLP': merge_param(common_grid.copy(), {'num_layers':[2, 3, 4]}) # specific params
 }
 
 def range_to_list(range_list):
@@ -111,6 +118,16 @@ def get_result(model:str):
         print(f'DONE in {round(t1-t0, 2)}s.')
 
 if __name__ == "__main__":
+    f""" [USAGE GUIDE]
+
+    [1] [GS for DL with iid Asm] CALL the command:
+        !python ./horse/dl_grid_search.py --model_name LinEmbConcat --result_path ./dl_model_result
+
+    [2] [GS for DL with pairwise Asm] CALL the command:
+        !python ./horse/dl_grid_search.py --train_file_path ./horse/train_pairwise.py --model_name LinEmbConcat --result_path ./dl_model_pairwise_result
+    
+    """
+
     # 1) make dir
     path = args.result_path
     isExist = os.path.exists(path)

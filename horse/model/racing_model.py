@@ -154,7 +154,7 @@ class EmbMLP(_BaseModel):
                                      , n_num_feats, k_dim_field, k_dim_id
                                      , need_activation)  
         # MLP
-        feat_dim = n_num_feats + 2*k_dim_field + 3*k_dim_id
+        feat_dim = n_num_feats + 2*k_dim_field + 5*k_dim_id
         MLP_sizes = [int(feat_dim*(layer_size_reduction**i)) for i in range(num_layers+1)]
         MLP_Layer=[]
         for i in range(num_layers):
@@ -176,9 +176,9 @@ class EmbMLP(_BaseModel):
         emb_h = self.emb_horse(horse)
         emb_t = self.emb_trainer(trainer)
         # interaction layer
-#         hj_val = torch.mul(emb_h, emb_j)
-#         ht_val = torch.mul(emb_h, emb_t)
-        out = torch.concat([x, emb_d, emb_f, emb_j, emb_h, emb_t], 1)
+        hj_val = torch.mul(emb_h, emb_j)
+        ht_val = torch.mul(emb_h, emb_t)
+        out = torch.concat([x, emb_d, emb_f, emb_j, emb_h, emb_t, hj_val, ht_val], 1)
         # MLP layer
         out = self.MLP_Layer(out)
         # out layer
