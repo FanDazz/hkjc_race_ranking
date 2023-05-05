@@ -61,7 +61,7 @@ common_grid = {
     # tuned params
     , 'use_numeric': [False, True]
     , 'use_best_feats': [False, True]
-    , 'learning_rate':log_lin_space(-5, 1, 6, 1), 'weight_decay':log_lin_space(-5, 1, 6, 1)}
+    , 'learning_rate':log_lin_space(-5, 0, 6, 1), 'weight_decay':log_lin_space(-5, 0, 6, 1)}
 
 model_param_dict = {
     'LinEmbConcat': common_grid.copy()
