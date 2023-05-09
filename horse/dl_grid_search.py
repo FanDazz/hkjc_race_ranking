@@ -57,17 +57,17 @@ args = parser.parse_args()
 
 common_grid = {
     # fixed params
-    'k_dim_field':[4], 'k_dim_id':[32], 'batch_size':[20], 'epoch':[50]
+    'k_dim_field':[4], 'k_dim_id':[32], 'batch_size':[20], 'epoch':[20]
     # tuned params
     , 'use_numeric': [False, True]
     , 'use_best_feats': [False, True]
-    , 'learning_rate':log_lin_space(-5, 0, 6, 1), 'weight_decay':log_lin_space(-5, 0, 6, 1)}
+    , 'learning_rate':log_lin_space(-5, -2, 4, 1), 'weight_decay':log_lin_space(-5, -2, 4, 1)}
 
 model_param_dict = {
     'LinEmbConcat': common_grid.copy()
     , 'LinEmbDotProd': common_grid.copy()
     , 'LinEmbElemProd': common_grid.copy()
-    , 'EmbMLP': merge_param(common_grid.copy(), {'num_layers':[2, 3, 4]}) # specific params
+    , 'EmbMLP': merge_param(common_grid.copy(), {'num_layers':[5]}) # specific params
 }
 
 def range_to_list(range_list):
@@ -124,7 +124,8 @@ if __name__ == "__main__":
         !python ./horse/dl_grid_search.py --model_name LinEmbConcat --result_path ./dl_model_result
 
     [2] [GS for DL with pairwise Asm] CALL the command:
-        !python ./horse/dl_grid_search.py --train_file_path ./horse/train_pairwise.py --model_name LinEmbConcat --result_path ./dl_model_pairwise_result
+        !python ./horse/dl_grid_search.py --train_file_path ./horse/train_pairwise.py 
+                                          --model_name LinEmbConcat --result_path ./dl_model_pairwise_result
     
     """
 
