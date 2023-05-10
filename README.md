@@ -55,7 +55,16 @@ ELO is a trending way evaluating relative skills among players. We modeled race-
 Also, we made course-wise elo for each entity. 
 
 ## 5. Modeling
-### 5.1 Modeling with Commands
+### 5.1 Training Manner
+The traditional way of horse racing champion prediction focuses on pointwise ranking, i.e. making guess on the probability each instance would win independantly, and taking the highest as the champion. However, such manner would hardly capture the order inside each game.
+
+Here we applied pairwise training strategy, which output relative ranking score for each instance instead of probability. By maximizing score gaps between instances with ordering, model would be able to capture the underlying orders, with better performance, and robustness.
+
+The training flow of which in horse racing looks like:
+
+<img src="./pic/train.png" width="100%" height="100%">
+
+### 5.2 Modeling with Commands
 Train Machine Learning Models, for example
 ``` 
 python ./horse/train_ml.py --logistic --C 0.0001
@@ -71,7 +80,7 @@ Tune parameters of pairwise DL models with grid search:
 python ./horse/grid_search_dl.py --train_file_path ./horse/train_pairwise.py --model_name EmbMLP 
 ```
 
-### 5.2 Try Your Own Codes
+### 5.3 Try Your Own Codes
 Please firstly load our dataset before further experiments:
 ``` python
 from horse.data.load_data import DataSet
