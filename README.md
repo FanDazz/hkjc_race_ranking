@@ -6,7 +6,9 @@ The repo is made for data mining pipeline for HKCJ horse racing champion predict
 
 Hong Kong Jockey Club (HKJC) organizes and regulates horse racing events every week. Predicting the champion of the race has been a problem. However, the previous works only focus on pointwise ranking, and with no all-round pipelines for data mining. 
 
-In this work, we not only scrapped 54436 racing records across 7 years, conducted feature engineering and selection, and built 5 ML models and 4 DL models that follow the traditions, but also innovatively apply pairwise training manner to tackle the problem, and developed python module for horse racing crawling, processing, and champion prediction. Further experiments and analysis proved our assumption is better over traditional ethics.We achieved at most 31.0% and 23.4% champion hit rate in validation and testing set.
+In this work, we not only scrapped 54436 racing records across 7 years, conducted feature engineering and selection, and built 5 ML models and 4 DL models that follow the traditions, but also innovatively apply pairwise training manner to tackle the problem, and developed python module for horse racing crawling, processing, and champion prediction. 
+
+Further experiments and analysis proved our assumption is better over traditional ethics. We achieved at most 31.0% and 23.4% champion hit rate in validation and testing set.
 
 For more details, you are welcomed to check our [report](./STAT8017_Who_is_the_champion_HKJC_horse_racing_prediction_report.pdf).
 
@@ -102,12 +104,15 @@ train, val, test = data.my_train_val_test_split([0.8, 0.1, 0.1])
 ``` 
 Then make your own models, or call the ones in our repo [./horse/model/](./horse/model/).
 
+Prepared models includes:
+- ML: Logistic Regression, Decision Tree, Adaboost, Random Forest, XGBoost;
+- DL: Perceptron with embdding concatenation, dot product, and elem-wise product; MLP with embedding concatenation.
 
 ## 6. Metrics, Findings
 ### 6.1 Performance
 Models are required to predict one champion for each game, and will be further evaluated with champion hit rate, or formally, average precision (AP).
 
-The following is the performance across all models compared with two baselines (random, highest winning odds).
+The following is the performance across all models compared with two baselines (random, lowest winning odds).
 
 <img src="./pic/performance.png" width="100%" height="100%">
 
