@@ -46,10 +46,12 @@ Functions will automatically locate the racing date between some windows require
 ## 4. Feature Engineering
 ### 4.1 Feature Map
 <img src="./pic/additional features.png" width="95%" height="95%">
-**Statistics of each entry, such as horse, jockey, trainer with all-round information, will cover his historical-wide, long-, mid-, and short-term performance**. For example, statistics for each race depending on the time span, wining rate, top4 rate, lifetime, etc, in different granularity in year, month, and days. 
+
+Statistics of each entry, such as horse, jockey, trainer with all-round information, will cover his historical-wide, long-, mid-, and short-term performance. For example, statistics for each race depending on the time span, wining rate, top4 rate, lifetime, etc, in different granularity in year, month, and days. 
 
 ### 4.2 ELO
 ELO is a trending way evaluating relative skills among players. We modeled race-level elo, which is based on:
+
 <img src="./pic/elo.png" width="95%" height="95%">
 
 Also, we made course-wise elo for each entity. 
@@ -82,6 +84,7 @@ python ./horse/grid_search_dl.py --train_file_path ./horse/train_pairwise.py --m
 
 ### 5.3 Try Your Own Codes
 Please firstly load our dataset before further experiments:
+
 ``` python
 from horse.data.load_data import DataSet
 
@@ -120,6 +123,7 @@ How would models perform with only looking at who is riding on which horse? Such
   3. ID + Most Imformative Numeric Features.
 
 <img src="./pic/imprv.png" width="100%" height="100%">
+
 - With only IDs for embedding lookups, models are equipped enough predictability if properly trained.
 
 #### 2\) Pairwise Training Outperform the Pointwise one
