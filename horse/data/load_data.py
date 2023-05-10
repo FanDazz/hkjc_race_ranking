@@ -41,7 +41,7 @@ def train_val_test_split(data, col, perc=[0.8, 0.1, 0.1]):
 
     return train, val, test
 
-file_root = './horse/data/perform_full.csv'
+file_root = './horse/data/perform_full_feature.csv'
 y_cols = ['is_champ', 'pla', 'finish_time', 'speed', 'is_champ', 'horse_is_champ', 'horse_is_place', 'horse_is_top4', 'jockey_is_champ', 'jockey_is_place', 'jockey_is_top4', 'trainer_is_champ', 'trainer_is_place', 'trainer_is_top4', 'win_odds']
 date_cols = ['race_key', 'race_date']
 dummy_cols = ['dr', 'dr_ix', 'field_going', 'jockey' ,'horse', 'trainer']

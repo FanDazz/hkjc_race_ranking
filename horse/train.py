@@ -1,33 +1,3 @@
-""" UPDATE LOGs
-2023/04/24: Version 1.0
-    - Enable training with BCELoss, treating racing prediction as 
-      the binary classification problem, with output scoring as
-      the ranking entity for each data.
-
-2023/04/26: Version 1.1
-    1. Enable training with no numeric features, i.e. pure collaborative with
-       jockey, horse, trainer.
-
-    2. Pairwise training 
-        See another file
-
-TODO:
-1. SAVE MODEL
-2. MORE TRAINING STRTEGIES
-3. PARAM TUNING
-4. Embedding Pretraining?
-
-"""
-
-
-""" IDEAS
-task -> way: default as prediction
-loss
-model
-lr
-wd
-"""
-
 import os
 import time
 import argparse
